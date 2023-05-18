@@ -4,6 +4,7 @@
     {
         private readonly RequestDelegate _next;
         private const string ApiKey = "ApiKey";
+
         // request object
         public ApiKeyAuthMiddleware(RequestDelegate next)
         {
@@ -16,16 +17,17 @@
             if(!context.Request.Headers.TryGetValue(ApiKey, out var extractedKey))
             {
                 context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Api key not given in the request");
+                await context.Response.WriteAsync("Api Key not given in the request!");
                 return;
             }
+
             // validate the API Key
             var appSettings = context.RequestServices.GetRequiredService<IConfiguration>();
             var key = appSettings.GetValue<string>(ApiKey);
             if (!key.Equals(extractedKey))
             {
                 context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("Api key not a valid/unauthorized");
+                await context.Response.WriteAsync("Api Key is not valid/unauthorized!");
                 return;
             }
 

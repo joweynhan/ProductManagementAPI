@@ -2,8 +2,7 @@
 {
     public class Product
     {
-        public int UserId { get; set; }
-        public int Id { get; set; }
+        public int ProductId { get; set; }
         public string Name { get; set; } = default!;
         public double Price { get; set; }
 

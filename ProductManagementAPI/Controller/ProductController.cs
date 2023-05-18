@@ -1,122 +1,111 @@
-﻿using ProductManagementAPI.Data;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using ProductManagementAPI.Data;
 using ProductManagementAPI.DTO;
-using System.Security.Claims;
-using System.Data;
-using System.Threading.Tasks;
+using ProductManagementAPI.Model;
+using ProductManagementAPI.Models;
+using ProductManagementAPI.Repository;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
-namespace EMSAPI.Controllers
+namespace ProductManagementAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     public class ProductController : ControllerBase
     {
-        ProductDBContext _context;
+        private readonly IProductDBRepository _repo;
+        private readonly IMapper _mapper;
+        private readonly ProductDBContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ProductController(ProductDBContext ProductDB)
+        public ProductController(IProductDBRepository repo, IMapper mapper,
+            ProductDBContext context, UserManager<ApplicationUser> userManager)
         {
-            _context = ProductDB;
+            _repo = repo;
+            _mapper = mapper;
+            _context = context;
+            _userManager = userManager;
         }
 
-        // Get All Product
-        [HttpGet]
-        public async Task<IActionResult> GetAllProduct()
+        [Authorize]
+        [HttpGet("Products")]
+        public IActionResult GetAll()
         {
-            var result = await _context.Products.FromSqlRaw("EXEC SelectAllProduct").ToListAsync();
-            return Ok(result);
+            var products = _repo.GetAllProductsAsync();
+            return Ok(products);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> AddProduct(AddProductDTO addDTO)
-        {
-            //// Get the current UserId from the claims
-            //var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            //if (UserId is null)
-            //{
-            //    return Unauthorized();
-            //}
 
-            var parameters = new[]
+        [Authorize]
+        [HttpPost("AddProduct")]
+        public IActionResult AddProduct(ProductDTO productDTO)
+        {
+            if (ModelState.IsValid)
             {
-                new SqlParameter("@UserId", addDTO. UserId),
-                new SqlParameter("@Name", addDTO.Name),
-                new SqlParameter("@Price", addDTO.Price)
-            };
+                var newProduct = new Product
+                {
+                    Name = productDTO.Name,
+                    Price = productDTO.Price
+                };
 
-            var result = await _context.Database.ExecuteSqlRawAsync("EXEC AddProduct @UserId, @Name, @Price", parameters);
-            return Ok(result);
+                var addedProduct = _repo.AddProduct(newProduct);
+                return Ok(addedProduct);
+            }
+            return BadRequest(ModelState);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, UpdateProductDTO updateDTO)
+        [Authorize]
+        [HttpGet("GetProduct/{id}")]
+        public IActionResult GetProduct(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = _repo.GetProductById(id);
             if (product == null)
             {
                 return NotFound();
             }
-
-            product.Name = updateDTO.Name;
-            product.Price = updateDTO.Price;
-
-            var parameters = new[]
-            {
-                new SqlParameter("@UserId", updateDTO.UserId),
-                new SqlParameter("@Id", id),
-                new SqlParameter("@Name", updateDTO.Name),
-                new SqlParameter("@Price", updateDTO.Price)
-            };
-
-            try
-            {
-                await _context.Database.ExecuteSqlRawAsync("EXEC UpdateProduct @UserId, @Id, @Name, @Price", parameters);
-                return Ok();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update the product.");
-            }
+            return Ok(product);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        [Authorize]
+        [HttpDelete("DeleteProduct/{id}")]
+        public IActionResult Delete(int id)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            var productToDelete = _repo.GetProductById(id);
+            if (productToDelete == null)
             {
-                return NotFound();
+                return NotFound("Product is not found!");
             }
 
-            var parameters = new[]
-            {
-                 new SqlParameter("@Id", id)
-            };
-
-            try
-            {
-                await _context.Database.ExecuteSqlRawAsync("EXEC DeleteProduct @Id", parameters);
-                return Ok();
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Failed to delete the product.");
-            }
+            var deletedProduct = _repo.DeleteProduct(id);
+            return Ok(_mapper.Map<ProductDTO>(deletedProduct));
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetProductById(int id)
+        [Authorize]
+        [HttpPut("UpdateProduct/{productId}")]
+        public IActionResult UpdateProduct(int productId, Product updatedProduct)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            var existingProduct = _repo.UpdateProduct(productId, updatedProduct);
+            if (existingProduct != null)
             {
-                return NotFound(); // Return 404 Not Found if the product is not found
+                // Handle successful update, if needed
+                return Ok(existingProduct); // or any other appropriate response
             }
-
-            return Ok(product); // Return the product if found
+            else
+            {
+                // Handle failed update, if needed
+                var errorMessage = $"Product with ID {productId} not found.";
+                return NotFound(errorMessage); // or any other appropriate response
+            }
         }
+
+
+        /*        [Authorize]
+                [HttpGet("ApplicationUserIds")]
+                public IActionResult GetApplicationUserIds()
+                {
+                    var applicationUserIds = _repo.GetApplicationUserIds();
+                    return Ok(applicationUserIds);
+                }*/
 
     }
 }

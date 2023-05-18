@@ -1,39 +1,43 @@
-using AutoMapper;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using ProductManagementAPI.Configurations;
-using ProductManagementAPI.CustomMiddleware;
-using ProductManagementAPI.Data;
-using ProductManagementAPI.DTO;
-using ProductManagementAPI.Model;
-using ProductManagementAPI.Models;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer; 
+using Microsoft.AspNetCore.Identity; 
+using Microsoft.IdentityModel.Tokens; 
+using ProductManagementAPI.Configurations; 
+using ProductManagementAPI.CustomMiddleware; 
+using ProductManagementAPI.Data; 
+using ProductManagementAPI.Models; 
+using ProductManagementAPI.Repository; 
+using System.Text; 
+using Microsoft.OpenApi.Models; 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Adding services to the container
-builder.Services.AddDbContext<ProductDBContext>(); 
+// Add  the following services to the container
+builder.Services.AddControllers();
+
 builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
+
+builder.Services.AddDbContext<ProductDBContext>();
+
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ProductDBContext>()
     .AddDefaultTokenProviders();
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    options.Password.RequiredLength = 1;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireDigit = false;
-    options.Password.RequiredUniqueChars = 0;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 5;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequiredUniqueChars = 1;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
 });
-//(opt => opt.UseInMemoryDatabase("ProductDB"));
-// configure the token decoding logic verify the token 
-// algorithm to decode the token
+
+builder.Services.AddScoped<IAccountDBRepository, AccountDBRepository>();
+builder.Services.AddScoped<IProductDBRepository, ProductDBRepository>();
+
+
+// Configure the token decoding logic verify the token 
+// Algorithm to decode the token
 var issuer = builder.Configuration["JWT:Issuer"];
 var audience = builder.Configuration["JWT:Audience"];
 var key = builder.Configuration["JWT:Key"];
@@ -45,9 +49,9 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = true;
     options.SaveToken = true;
-    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters // or TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
@@ -57,31 +61,73 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization(options => {
-    options.AddPolicy("admin_greetings", policy => policy.RequireAuthenticatedUser());
-});
-
-// policy who can access it 
-
+// CORS POLICY - Policy who can access it 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-
 builder.Services.AddCors(opt =>
 {
-    opt.AddPolicy(name: MyAllowSpecificOrigins, policy =>
-    {
-        //policy.AllowAnyOrigin()
-        policy.WithOrigins("https://localhost:44360", "mydomain.com")
-        .AllowAnyHeader()
-        .AllowAnyMethod();
-    });
+    opt.AddPolicy(
+        name: MyAllowSpecificOrigins, policy => {
+            policy.WithOrigins("https://localhost:44313", "https://localhost:7143") // MVC's appsetting application URL
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        }
+   );
 });
 
-// Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(opt =>
+{
+    opt.SwaggerDoc("v1", new OpenApiInfo { Title = "ProductAPI", Version = "v1" });
+    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a Token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "bearer"
+    });
+
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
+
+    opt.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Name = "ApiKey",
+        Description = "API Key Authentication Using the 'ApiKey' header"
+    });
+
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "ApiKey"
+                }
+            },
+            new string[]{}
+        }
+    });
+});
 
 var app = builder.Build();
 
@@ -92,106 +138,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// -------------------------------------------------------------------------------------------------CRUD
-//app.MapGet("/products", async (ProductDBContext db) => Results.Ok(await db.Products.ToListAsync()))
-//    .RequireAuthorization("admin_greetings");
+app.UseHttpsRedirection();
 
-//app.MapGet("/products/{id}", async (ProductDBContext db, int id) =>
-//            await db.Products.FindAsync(id)
-//                is Product products ? Results.Ok(products) : Results.NotFound());
-
-//app.MapPost("/products", async (ProductDBContext db, Product product) =>
-//{
-//    db.Products.Add(product);
-//    await db.SaveChangesAsync();
-//    return Results.Created($"/products/{product.Id}", product);
-//});
-
-//app.MapPut("/products/{id}", async (ProductDBContext db, Product product, int id) =>
-//{
-//    var oldProduct = await db.Products.FindAsync(id);
-//    if (product is null) return Results.NotFound();
-
-//    //automapper
-
-//    oldProduct.Name = product.Name;
-//    oldProduct.Price = product.Price;
-//    await db.SaveChangesAsync();
-//    return Results.NoContent();
-//});
-
-//app.MapDelete("/products/{id}", async (ProductDBContext db, int id) =>
-//{
-//    if (await db.Products.FindAsync(id) is Product product)
-//    {
-//        db.Products.Remove(product);
-//        await db.SaveChangesAsync();
-//        return Results.Ok(product);
-//    }
-//    return Results.NotFound();
-//});
-
-//---------------------------------------------------------------------------------------------CRUD
-
-app.MapPost("/signup", async (ProductDBContext db, IMapper mapper, UserManager<ApplicationUser> userManager, SignUpDTO userDTO) =>
-{
-    var user = mapper.Map<ApplicationUser>(userDTO);
-
-    var newUser = await userManager.CreateAsync(user, userDTO.Password);
-    if (newUser.Succeeded)
-        return user;
-    return null;
-});
-
-app.MapPost("/login", async (ProductDBContext db,
-                            SignInManager<ApplicationUser> signInManager,
-                            UserManager<ApplicationUser> userManager,
-                            IConfiguration appConfig,
-                            LoginDTO loginDTO) =>
-{
-    // generate a token and return a token
-    var issuer = appConfig["JWT:Issuer"];
-    var audience = appConfig["JWT:Audience"];
-    var key = appConfig["JWT:Key"];
-
-    if (loginDTO is not null)
-    {
-        var loginResult = await signInManager.PasswordSignInAsync(loginDTO.UserName, loginDTO.Password, loginDTO.RememberMe, false);
-        if (loginResult.Succeeded)
-        {
-            // generate a token
-            var user = await userManager.FindByEmailAsync(loginDTO.UserName);
-            if (user != null)
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString())
-                };
-
-                var keyBytes = Encoding.UTF8.GetBytes(key);
-                var theKey = new SymmetricSecurityKey(keyBytes); // 256 bits of key
-                var creds = new SigningCredentials(theKey, SecurityAlgorithms.HmacSha256);
-                var token = new JwtSecurityToken(issuer, audience, claims:claims, expires: DateTime.Now.AddMinutes(30), signingCredentials: creds);
-                return Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) }); // token 
-            }
-        }
-    }
-    return Results.BadRequest();
-});
 
 app.UseCors(MyAllowSpecificOrigins);
 
-// has a valid api key if it is valid then allow to access the endpoint if not deny
 app.UseMiddleware<ApiKeyAuthMiddleware>();
-
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Automigrate(); //AutoMigration in Data folder
-
 app.Run();
-
-

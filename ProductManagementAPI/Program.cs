@@ -67,7 +67,7 @@ builder.Services.AddCors(opt =>
 {
     opt.AddPolicy(
         name: MyAllowSpecificOrigins, policy => {
-            policy.WithOrigins("https://localhost:44313", "https://localhost:7143") // MVC's appsetting application URL
+            policy.WithOrigins("https://localhost:7255" , "http://localhost:44325") // MVC's properties - appsetting 
             .AllowAnyHeader()
             .AllowAnyMethod();
         }

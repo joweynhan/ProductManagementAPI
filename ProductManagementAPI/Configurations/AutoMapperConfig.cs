@@ -8,6 +8,7 @@ namespace ProductManagementAPI.Configurations
     public class AutoMapperConfig : Profile
     {
         // SignupDTO = ApplicationUser
+        // ProductDTO
         public AutoMapperConfig()
         {
             CreateMap<ApplicationUser, SignUpDTO>().ReverseMap()

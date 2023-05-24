@@ -7,13 +7,10 @@ namespace ProductManagementAPI.Configurations
 {
     public class AutoMapperConfig : Profile
     {
-        // SignupDTO = ApplicationUser
-        // ProductDTO
-        public AutoMapperConfig()
+        public AutoMapperConfig() //program.cs
         {
             CreateMap<ApplicationUser, SignUpDTO>().ReverseMap()
-            .ForMember(f => f.UserName, t2 => t2.MapFrom(src => src.Email));
-
+            .ForMember(f => f.UserName, t2 => t2.MapFrom(src => src.Email)); // maps the "UserName" property of the destination object to the "Email" property of the source object
             CreateMap<Product, ProductDTO>().ReverseMap();
         }
     }

@@ -28,10 +28,10 @@ namespace ProductManagementAPI.Controllers
         }
 
         [Authorize]
-        [HttpGet("Products")]
-        public IActionResult GetAll()
+        [HttpGet("Products")] // attritube
+        public IActionResult GetAll() // action method 
         {
-            var products = _repo.GetAllProductsAsync();
+            var products = _repo.GetAllProductsAsync(); // method in the reposiitory
             return Ok(products);
         }
 
@@ -42,6 +42,7 @@ namespace ProductManagementAPI.Controllers
         {
             if (ModelState.IsValid)
             {
+                // map to the Product entity
                 var newProduct = new Product
                 {
                     Name = productDTO.Name,
@@ -87,25 +88,14 @@ namespace ProductManagementAPI.Controllers
             var existingProduct = _repo.UpdateProduct(productId, updatedProduct);
             if (existingProduct != null)
             {
-                // Handle successful update, if needed
-                return Ok(existingProduct); // or any other appropriate response
+                return Ok(existingProduct);
             }
+
             else
             {
-                // Handle failed update, if needed
                 var errorMessage = $"Product with ID {productId} not found.";
-                return NotFound(errorMessage); // or any other appropriate response
+                return NotFound(errorMessage);
             }
         }
-
-
-        /*        [Authorize]
-                [HttpGet("ApplicationUserIds")]
-                public IActionResult GetApplicationUserIds()
-                {
-                    var applicationUserIds = _repo.GetApplicationUserIds();
-                    return Ok(applicationUserIds);
-                }*/
-
     }
 }

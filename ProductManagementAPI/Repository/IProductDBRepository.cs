@@ -9,7 +9,5 @@ namespace ProductManagementAPI.Repository
         Product AddProduct(Product newProduct);
         Product UpdateProduct(int productId, Product updatedProduct);
         Product DeleteProduct(int productId);
-
-        // IEnumerable<string> GetApplicationUserIds();
     }
 }

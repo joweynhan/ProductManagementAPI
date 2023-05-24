@@ -2,7 +2,7 @@
 
 namespace ProductManagementAPI.Data
 {
-    public static class AutoMigration // no need to update-database everytime making a store procedure
+    public static class AutoMigration // no need to update-database everytime making a stored procedure
     {
         public static void Automigrate(this WebApplication app)
         {

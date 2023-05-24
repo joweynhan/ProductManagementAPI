@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ProductManagementAPI.Repository
+namespace ProductManagementAPI.Repository // repository for handling CRUD operations by using the stored procedure
 {
     public class ProductDBRepository : IProductDBRepository
     {
@@ -25,30 +25,10 @@ namespace ProductManagementAPI.Repository
 
         public IEnumerable<Product> GetAllProductsAsync()
         {
-            /*var userId = _userManager.GetUserId(_httpContextAccessor.HttpContext.User);*/
-            // var userIdClaim = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
-            /*if (userIdClaim != null)
-            {
-                string userId = userIdClaim.Value;
-                // Use the userId as needed
-            }*/
-            /*string userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;*/
             var products = _context.Products
                 .FromSqlRaw("EXECUTE GetAllProducts")
                 .AsNoTracking()
                 .ToList();
-
-            /*var userIds = products.Select(c => c.ApplicationUserId).Distinct().ToList();
-
-            var users = _context.Users
-                .Where(u => userIds.Contains(u.Id))
-                .ToList();
-
-            foreach (var product in products)
-            {
-                product.ApplicationUser = users.FirstOrDefault(u => u.Id == product.ApplicationUserId);
-            }*/
-
             return products;
         }
 
@@ -64,8 +44,6 @@ namespace ProductManagementAPI.Repository
             return products;
         }
 
-
-
         public Product AddProduct(Product newProduct)
         {
             var nameParam = new SqlParameter("@Name", newProduct.Name);
@@ -76,8 +54,6 @@ namespace ProductManagementAPI.Repository
 
             return newProduct;
         }
-
-
 
        
         public Product UpdateProduct(int productId, Product updatedProduct)
@@ -98,14 +74,10 @@ namespace ProductManagementAPI.Repository
             }
             else
             {
-                return null; // Product not found, return null
+                return null; 
             }
             return existingProduct;
         }
-
-
-
-
 
         public Product DeleteProduct(int productId)
         {
@@ -118,14 +90,5 @@ namespace ProductManagementAPI.Repository
             }
             return product;
         }
-/*        public IEnumerable<string> GetApplicationUserIds()
-        {
-            var applicationUserIds = _context.Products
-                .Select(c => c.ApplicationUserId)
-                .Distinct()
-                .ToList();
-
-            return applicationUserIds;
-        }*/
     }
 }

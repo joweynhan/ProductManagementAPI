@@ -1,6 +1,7 @@
 ﻿namespace ProductManagementAPI.CustomMiddleware
 {
-    public class ApiKeyAuthMiddleware
+    //for authenticating API requests based on an API key
+    public class ApiKeyAuthMiddleware //program.cs
     {
         private readonly RequestDelegate _next;
         private const string ApiKey = "ApiKey";
@@ -12,6 +13,7 @@
         }
 
         // context container request response pipeline objects 
+        //main entry point for the middleware
         public async Task Invoke(HttpContext context)
         {
             if(!context.Request.Headers.TryGetValue(ApiKey, out var extractedKey))
@@ -22,6 +24,7 @@
             }
 
             // validate the API Key
+            // compares the extracted API key with the actual API key value
             var appSettings = context.RequestServices.GetRequiredService<IConfiguration>();
             var key = appSettings.GetValue<string>(ApiKey);
             if (!key.Equals(extractedKey))
@@ -31,7 +34,7 @@
                 return;
             }
 
-            await _next(context);
+            await _next(context); // allows the request to proceed to the next component
         }
     }
 }

@@ -22,6 +22,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ProductDBContext>()
     .AddDefaultTokenProviders();
 
+// password requirements for user authentication
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequiredLength = 5;
@@ -35,9 +36,8 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.AddScoped<IAccountDBRepository, AccountDBRepository>();
 builder.Services.AddScoped<IProductDBRepository, ProductDBRepository>();
 
-
-// Configure the token decoding logic verify the token 
-// Algorithm to decode the token
+// authentication and authorization middleware are configured
+// JWT Token
 var issuer = builder.Configuration["JWT:Issuer"];
 var audience = builder.Configuration["JWT:Audience"];
 var key = builder.Configuration["JWT:Key"];
@@ -61,20 +61,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// CORS POLICY - Policy who can access it 
+// CORS (Cross-Origin Resource Sharing) policy - domains who can access it 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy(
         name: MyAllowSpecificOrigins, policy => {
-            policy.WithOrigins("https://localhost:7255" , "http://localhost:44325") // MVC's properties - appsetting 
+            policy.WithOrigins("https://localhost:7255" , "http://localhost:44325") // MVC's properties - applicationURL and sslPort 
             .AllowAnyHeader()
             .AllowAnyMethod();
         }
    );
 });
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+//Swagger is configured to generate API documentation
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(opt =>
@@ -140,11 +140,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
 app.UseCors(MyAllowSpecificOrigins);
 
 app.UseMiddleware<ApiKeyAuthMiddleware>();
+
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();

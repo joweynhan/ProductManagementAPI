@@ -9,6 +9,5 @@ namespace ProductManagementAPI.Repository
         Task<IdentityResult> SignUpUserAsync(ApplicationUser user, string password);
         Task<SignInResult> SignInUserAsync(LoginDTO loginDTO);
         Task<ApplicationUser> FindUserByEmailAsync(string email);
-        // IEnumerable<string> GetApplicationUserIds();
     }
 }

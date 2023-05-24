@@ -5,6 +5,5 @@
         public int ProductId { get; set; }
         public string Name { get; set; } = default!;
         public double Price { get; set; }
-
     }
 }

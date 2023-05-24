@@ -22,26 +22,17 @@ namespace ProductManagementAPI.Repository
 
         public async Task<IdentityResult> SignUpUserAsync(ApplicationUser user, string password)
         {
-            return await _userManager.CreateAsync(user, password);
+            return await _userManager.CreateAsync(user, password); // IdentityResilt, success or failure
         }
 
-        public async Task<SignInResult> SignInUserAsync(LoginDTO loginDTO)
+        public async Task<SignInResult> SignInUserAsync(LoginDTO loginDTO) // SigninResult, success, fail, lockout
         {
             return await _signInManager.PasswordSignInAsync(loginDTO.UserName, loginDTO.Password, false, lockoutOnFailure: false);
         }
 
-        public async Task<ApplicationUser> FindUserByEmailAsync(string email)
+        public async Task<ApplicationUser> FindUserByEmailAsync(string email) // returns an "ApplicationUser" object representing the found user, or null if no user is found
         {
-            return await _userManager.FindByEmailAsync(email);
+            return await _userManager.FindByEmailAsync(email); // "_userManager" field to find a user asynchronously by their email address
         }
-/*        public IEnumerable<string> GetApplicationUserIds()
-        {
-            var applicationUserIds = _context.Products
-                .Select(c => c.ApplicationUserId)
-                .Distinct()
-                .ToList();
-
-            return applicationUserIds;
-        }*/
     }
 }

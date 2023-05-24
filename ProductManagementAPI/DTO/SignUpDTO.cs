@@ -13,7 +13,7 @@ namespace ProductManagementAPI.DTO
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-        [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{5,}$", ErrorMessage = "Password must have a minimum of five characters, at least one letter, one uppercase letter, one number and one special character")]
+        [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{5,}$", ErrorMessage = "Password must have a minimum of five characters, at least one letter, one uppercase letter, one number and one special character.")]
         [Required(ErrorMessage = "Password field is required.")]
         [DataType(DataType.Password)]
         public string Password { get; set; }

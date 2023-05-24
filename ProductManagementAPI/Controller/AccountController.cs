@@ -34,14 +34,14 @@ namespace ProductManagementAPI.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpPost("Signup")]
-        public async Task<IActionResult> Register(SignUpDTO userDTO)
+        [HttpPost("Signup")] // route attribute
+        public async Task<IActionResult> Register(SignUpDTO userDTO) // method
         {
-            var user = _mapper.Map<ApplicationUser>(userDTO);
+            var user = _mapper.Map<ApplicationUser>(userDTO); // to map the SignUpDTO to an ApplicationUser object
 
             if (ModelState.IsValid)
             {
-                var val = await _repo.SignUpUserAsync(user, userDTO.Password);
+                var val = await _repo.SignUpUserAsync(user, userDTO.Password); // repository interface
                 return Ok(user);
             }
             return BadRequest(ModelState);
@@ -50,14 +50,13 @@ namespace ProductManagementAPI.Controllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginDTO loginDTO)
         {
-            // generate a token and return a token
             var issuer = _appConfig["JWT:Issuer"];
             var audience = _appConfig["JWT:Audience"];
             var key = _appConfig["JWT:Key"];
 
             if (ModelState.IsValid)
             {
-                var loginResult = await _repo.SignInUserAsync(loginDTO);
+                var loginResult = await _repo.SignInUserAsync(loginDTO); // user authentication
                 if (loginResult.Succeeded)
                 {
                     // generate a token
@@ -71,16 +70,19 @@ namespace ProductManagementAPI.Controllers
 
 
                         var keyBytes = Encoding.UTF8.GetBytes(key);
-                        var theKey = new SymmetricSecurityKey(keyBytes); // 256 bits of key
+                        var theKey = new SymmetricSecurityKey(keyBytes); 
                         var creds = new SigningCredentials(theKey, SecurityAlgorithms.HmacSha256);
+
                         var token = new JwtSecurityToken(issuer, audience, null, expires: DateTime.Now.AddMinutes(30), signingCredentials: creds);
+
+                        // token is serialized
+                        //  converting a token into a standardized format that can be transmitted or stored - JSON format
                         return Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token), userId = user.Id });
-                        // token 
                     }
                 }
                 else
                 {
-                    ModelState.AddModelError("LoginError", "Invalid username or password."); // Add a custom error message to the model state
+                    ModelState.AddModelError("LoginError", "Invalid username or password!"); // wrong credentials for login
                     return BadRequest(ModelState);
                 }
             }
